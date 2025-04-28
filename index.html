@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en"> 
+ <head> 
+  <meta charset="UTF-8"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+  <title>TikTok Video Downloader</title> 
+  <style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: black;
+        color: white;
+        overflow: hidden;
+        position: relative;
+        min-height: 100vh;
+    }
+    #matrixCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.2;
+        pointer-events: none;
+    }
+    .container {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        padding: 30px;
+        max-width: 500px;
+        margin: auto;
+        margin-top: 60px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 20px;
+        backdrop-filter: blur(8px);
+    }
+    input, button {
+        padding: 12px;
+        margin: 10px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        width: 80%;
+        max-width: 400px;
+        outline: none;
+    }
+    button {
+        cursor: pointer;
+        background: linear-gradient(90deg, #ff416c, #ff4b2b);
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 0 10px #ff416c;
+        transition: transform 0.3s;
+    }
+    button:hover {
+        transform: scale(1.05);
+    }
+    #status {
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    #downloadSection {
+        margin-top: 20px;
+        display: none;
+    }
+    .secondary-button {
+        background: linear-gradient(90deg, #25D366, #128C7E);
+        box-shadow: 0 0 10px #25D366;
+        margin-top: 10px;
+        width: 80%;
+    }
+    .dev-button {
+        background: linear-gradient(90deg, #0088cc, #005577);
+        box-shadow: 0 0 10px #0088cc;
+        margin-top: 10px;
+        width: 80%;
+    }
+    #popupOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    #popupOverlay div {
+        background: #1c1c1c;
+        padding: 30px 20px;
+        border-radius: 15px;
+        text-align: center;
+        max-width: 300px;
+        box-shadow: 0 0 20px rgba(0,255,255,0.2);
+    }
+    #popupOverlay h3 {
+        color: #fff;
+        margin-bottom: 20px;
+    }
+    #popupOverlay button {
+        margin: 10px;
+        padding: 10px 20px;
+        border: none;
+        color: white;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    #popupOverlay .join-btn {
+        background: #0088cc;
+    }
+    #popupOverlay .cancel-btn {
+        background: #555;
+    }
+  </style> 
+ </head> 
+ <body> 
+  <canvas id="matrixCanvas"></canvas> 
+  <div class="container"> 
+   <h1>TikTok Downloader</h1> 
+   <input type="text" id="tiktokUrl" placeholder="Paste TikTok video link here"> 
+   <br> <button onclick="downloadVideo()">Submit</button> 
+   <div id="status"></div> 
+   <div id="downloadSection"> <a id="downloadLink" href="#" target="_blank" download> <button>⬇️ Download Video</button> </a> 
+    <br> <a href="https://t.me/Trustedhacker079" target="_blank"> <button class="secondary-button">🎉 Join Telegram Channel</button> </a> <a href="https://t.me/trustedhacker78" target="_blank"> <button class="dev-button">👨‍💻 Developer</button> </a> 
+   </div> 
+  </div> 
+  <div id="popupOverlay"> 
+   <div> 
+    <h3>Join our Telegram Channel?</h3> <button class="join-btn" onclick="joinTelegram()">Join</button> <button class="cancel-btn" onclick="closePopup()">Cancel</button> 
+   </div> 
+  </div> 
+  <script>
+    // Binary Matrix Effect
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    const letters = "01";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array.from({length: columns}, () => 1);
+
+    function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00ff99";
+        ctx.font = fontSize + "px monospace";
+
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters[Math.floor(Math.random() * letters.length)];
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    setInterval(drawMatrix, 35);
+
+    // TikTok Downloader Functionality
+    async function downloadVideo() {
+        const urlInput = document.getElementById('tiktokUrl').value.trim();
+        const statusDiv = document.getElementById('status');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadLink = document.getElementById('downloadLink');
+
+        if (!urlInput) {
+            alert('Please enter a TikTok URL.');
+            return;
+        }
+
+        statusDiv.innerHTML = "⌛ Fetching video...";
+        downloadSection.style.display = 'none';
+
+        try {
+            const response = await fetch(`https://tiktok-downloader.apis-bj-devs.workers.dev/?url=${encodeURIComponent(urlInput)}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const hdVideo = data.downloads.find(d => d.type === "download_video_hd");
+                if (hdVideo) {
+                    downloadLink.href = hdVideo.url;
+                    statusDiv.innerHTML = "✅ Video Ready!";
+                    downloadSection.style.display = 'block';
+                } else {
+                    statusDiv.innerHTML = "❌ HD Video not found.";
+                }
+            } else {
+                statusDiv.innerHTML = "❌ Failed to fetch video.";
+            }
+        } catch (e) {
+            statusDiv.innerHTML = "❌ Error fetching video.";
+        }
+    }
+
+    // Popup Functions
+    function joinTelegram() {
+        window.open("https://t.me/Trustedhacker079", "_blank");
+        closePopup();
+    }
+
+    function closePopup() {
+        document.getElementById('popupOverlay').style.display = 'none';
+    }
+
+    // Show popup after 15 seconds
+    setTimeout(() => {
+        document.getElementById('popupOverlay').style.display = 'flex';
+    }, 15000);
+
+    // Window Resize Handler
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+  </script> 
+ </body>
+</html>
